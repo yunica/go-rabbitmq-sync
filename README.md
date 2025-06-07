@@ -42,7 +42,7 @@ This command will:
 Visit `http://localhost:15672`
 Login with the credentials specified in `.env-rabbitmq`.
 
-## Access MySQL
+### Access MySQL
 
 Visit `http://localhost:8080`
 Login with the credentials specified in `.env-mysql`.

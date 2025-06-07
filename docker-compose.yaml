@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:8.0
+    env_file:
+      - .env-mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql_init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=$MYSQL_ROOT_PASSWORD" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+  rabbitmq:
+    image: rabbitmq:3.12.14-management-alpine
+    env_file:
+      - .env-rabbitmq
+    ports:
+      - "15672:15672" # ui
+#      - "5672:5672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql_ui:
+    image: adminer:5.3.0-standalone
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    ports:
+      - 8080:8080
+
+  publisher:
+    build: backend
+    command: ["go","run", "cmd/backend/main-publisher.go"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  consumer:
+    build: backend
+    command: ["go","run", "cmd/backend/main-consumer.go"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
